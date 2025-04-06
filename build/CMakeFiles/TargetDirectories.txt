@@ -1,0 +1,3 @@
+C:/Users/wurte/x64dbgmcp/build/CMakeFiles/MCPx64dbg.dir
+C:/Users/wurte/x64dbgmcp/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/wurte/x64dbgmcp/build/CMakeFiles/ZERO_CHECK.dir

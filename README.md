@@ -21,5 +21,11 @@ This is my first repo, so I realize I may have made some mistakes. Any advice or
 2. Grab the x64dbgmcp.py file from src dir and map your claude_desktop_config file to its install location
 3. Start x64dbg , then start Claude Desktop. You can always check the logs to make sure the plug-in loaded successfully by pressing ALT+L in x64dbg.
 
+**BUILD**
+1. clone repo
+2. cd build
+3. cmake .. -DBUILD_X64=ON
+4. cmake build . --config Release
+
 
 ![Demo of Plug](Showcase.gif)

@@ -2,9 +2,12 @@
 Model Context Protocol for x64dbg
 
 ## Working Minimal Version
-This plug-in currently only supports two functions from the x64dbgSDK which are:
+This plug-in currently only supports four functions from the x64dbgSDK which are:
+
 1. DbgCmdExec
 2. DbgIsActive
+3. GetModuleList
+4. FindMemBaseAddr
 
 **This also only works for x64dbg, no x86dbg support is implemented as of now**
 I want to add most of the functions provided by the sdk so dynamic analysis can be as easy as conversing with an LLM. Link to functions [here](https://help.x64dbg.com/en/latest/developers/functions/index.html)

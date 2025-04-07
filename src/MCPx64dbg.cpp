@@ -6,6 +6,7 @@
 // Include x64dbg SDK
 #include "pluginsdk/bridgemain.h"
 #include "pluginsdk/_plugins.h"
+#include "pluginsdk/_scriptapi_module.h"
 
 // Socket includes - after Windows.h
 #include <winsock2.h>
@@ -246,6 +247,79 @@ DWORD WINAPI HttpServerThread(LPVOID lpParam) {
                     bool success = DbgCmdExec(cmd.c_str());
                     sendHttpResponse(clientSocket, 200, "text/plain", 
                                   success ? "Command executed successfully" : "Command execution failed");
+                }
+                else if (path == "/FindMemBase") {
+                    std::string addrStr = queryParams["addr"];
+                    if (addrStr.empty() && !body.empty()) {
+                        addrStr = body;
+                    }
+                    _plugin_logprintf("FindMemBase endpoint called with addr: %s\n", addrStr.c_str());
+                    // Convert string address to duint
+                    duint addr = 0;
+                    try {
+                        addr = std::stoull(addrStr, nullptr, 16); // Parse as hex
+                    }
+                    catch (const std::exception& e) {
+                        sendHttpResponse(clientSocket, 400, "text/plain", "Invalid address format");
+                        continue;
+                    }
+                    _plugin_logprintf("Converted address: 0x%llx\n", addr);
+                    
+                    // Get the base address and size
+                    duint size = 0;
+                    duint baseAddr = DbgMemFindBaseAddr(addr, &size);
+                    _plugin_logprintf("Base address found: 0x%llx, size: %llu\n", baseAddr, size);
+                    if (baseAddr == 0) {
+                        sendHttpResponse(clientSocket, 404, "text/plain", "No module found for this address");
+                    }
+                    else {
+                        // Format the response with base address and size
+                        std::stringstream ss;
+                        ss << std::hex << "0x" << baseAddr << "," << size;
+                        sendHttpResponse(clientSocket, 200, "text/plain", ss.str());
+                    }
+                }
+                else if (path == "/GetModuleList") {
+                    // Create a list to store the module information
+                    ListInfo moduleList;
+                    
+                    // Get the list of modules
+                    bool success = Script::Module::GetList(&moduleList);
+                    
+                    if (!success) {
+                        sendHttpResponse(clientSocket, 500, "text/plain", "Failed to get module list");
+                    }
+                    else {
+                        // Create a JSON array to hold the module information
+                        std::stringstream jsonResponse;
+                        jsonResponse << "[";
+                        
+                        // Iterate through each module in the list
+                        size_t count = moduleList.count;
+                        Script::Module::ModuleInfo* modules = (Script::Module::ModuleInfo*)moduleList.data;
+                        
+                        for (size_t i = 0; i < count; i++) {
+                            if (i > 0) jsonResponse << ",";
+                            
+                            // Add module info as JSON object
+                            jsonResponse << "{";
+                            jsonResponse << "\"name\":\"" << modules[i].name << "\",";
+                            jsonResponse << "\"base\":\"0x" << std::hex << modules[i].base << "\",";
+                            jsonResponse << "\"size\":\"0x" << std::hex << modules[i].size << "\",";
+                            jsonResponse << "\"entry\":\"0x" << std::hex << modules[i].entry << "\",";
+                            jsonResponse << "\"sectionCount\":" << std::dec << modules[i].sectionCount << ",";
+                            jsonResponse << "\"path\":\"" << modules[i].path << "\"";
+                            jsonResponse << "}";
+                        }
+                        
+                        jsonResponse << "]";
+                        
+                        // Free the list
+                        BridgeFree(moduleList.data);
+                        
+                        // Send the response
+                        sendHttpResponse(clientSocket, 200, "application/json", jsonResponse.str());
+                    }
                 }
                 else {
                     // Unknown URL
